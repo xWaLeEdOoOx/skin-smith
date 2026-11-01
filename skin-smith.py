@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.2
+version: 0.6.3
 """
 
 import hashlib
@@ -3917,6 +3917,35 @@ def _meta_write(fn_id, css):
     except Exception:
         pass
 
+async def _is_admin(request):
+    # Gate for /skin/save: require an admin session, resolved version-agnostically
+    # (the session util's module path and signature drift between Open WebUI versions).
+    if not request.cookies.get("session_token"):
+        return False
+    import inspect
+    for modpath in ("open_webui.apps.webui.utils", "open_webui.utils.auth"):
+        try:
+            m = __import__(modpath, fromlist=["get_user_from_session"])
+            f = getattr(m, "get_user_from_session", None)
+            if f is None:
+                continue
+            user = None
+            for args in ((request,), (request, None)):
+                try:
+                    user = f(*args)
+                    break
+                except Exception:
+                    pass
+            if inspect.iscoroutine(user):
+                user = await user
+            if user is None:
+                continue
+            if getattr(user, "role", None) == "admin" or getattr(user, "is_admin", False):
+                return True
+        except Exception:
+            continue
+    return False
+
 def _ensure_pages(app):
     # Define handlers first (insert() references them), then insert the
     # routes BEFORE the SPA catch-all so it never shadows /skin.
@@ -3936,6 +3965,8 @@ def _ensure_pages(app):
         return Response(_active_css(app), media_type="text/css; charset=utf-8")
 
     async def theme_save(request):
+        if not await _is_admin(request):
+            return Response("Not allowed. Admin session required.", status_code=403, media_type="text/plain")
         form = await request.form()
         css = form.get("css", "")
         app.state._tdp_css = css  # immediate effect for the running instance
