@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.4
+version: 0.6.5
 """
 
 import hashlib
@@ -3988,15 +3988,21 @@ def _ensure_pages(app):
             if getattr(r, "path", "") in ("", "/"):
                 return i
         return len(routes)
-    paths = ("/skin", "/skin/converter.js", "/skin/preview.js", "/skin/owui-logo.png", "/skin/css", "/skin/save")
+    routes_spec = [("/skin", theme_page, "GET"), ("/skin/converter.js", theme_converter_js, "GET"), ("/skin/preview.js", theme_preview_js, "GET"), ("/skin/owui-logo.png", theme_logo, "GET"), ("/skin/css", theme_css, "GET"), ("/skin/save", theme_save, "POST")]
+    paths = tuple(p for p, h, m in routes_spec)
     idx = spa_index(app.routes)
     existing = [r for r in app.routes if getattr(r, "path", "") in paths]
     if len(existing) == len(paths) and all(app.routes.index(r) < idx for r in existing):
+        # Routes from the PREVIOUS module execution are in place: their
+        # handlers are old closures. Swap the fresh handlers in, keep positions.
+        by_path = {p: h for p, h, m in routes_spec}
+        for r in existing:
+            r.endpoint = by_path[r.path]
         return
     app.routes[:] = [r for r in app.routes if getattr(r, "path", "") not in paths]
     idx = spa_index(app.routes)
     from starlette.routing import Route
-    for p, h, m in [("/skin", theme_page, "GET"), ("/skin/converter.js", theme_converter_js, "GET"), ("/skin/preview.js", theme_preview_js, "GET"), ("/skin/owui-logo.png", theme_logo, "GET"), ("/skin/css", theme_css, "GET"), ("/skin/save", theme_save, "POST")]:
+    for p, h, m in routes_spec:
         app.routes.insert(idx, Route(p, h, methods=[m]))
         idx += 1
 
