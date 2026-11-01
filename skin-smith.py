@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.11
+version: 0.6.12
 """
 
 import hashlib
@@ -3981,6 +3981,23 @@ async def _is_admin(request):
         uid = payload.get("id")
         if not uid:
             return False
+        # Revocation check (latest OWUI: session_stamp + Redis per-token/
+        # per-user revocation). A leaked admin token must NOT keep working
+        # after the session is revoked. If the revocation helper exists, it
+        # must pass; old builds have no revocation system and fall through.
+        try:
+            m = __import__("open_webui.utils.auth", fromlist=["is_valid_token"])
+            f = getattr(m, "is_valid_token", None)
+            if f is not None:
+                state = getattr(getattr(request, "app", None), "state", None)
+                redis = getattr(state, "redis", None) if state is not None else None
+                ok = f(payload, redis)
+                if inspect.iscoroutine(ok):
+                    ok = await ok
+                if not ok:
+                    return False
+        except Exception:
+            pass
         try:
             from open_webui.models.users import Users
             u = Users.get_user_by_id(uid)
