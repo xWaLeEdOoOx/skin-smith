@@ -1,0 +1,4 @@
+# Deployable artifact: served bytes must equal source bytes.
+*.py -text
+*.json -text
+*.md text
