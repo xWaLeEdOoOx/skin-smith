@@ -35,7 +35,7 @@
 
    (or just download `skin-smith.py` from the repo)
 
-2. In Open WebUI: right-click your username → **Admin Panel → Functions** → **Create** → paste the full contents of `skin-smith.py` → **Save** → toggle **Global**.
+2. In Open WebUI: right-click your username → **Admin Panel → Functions** → **Create** → paste the full contents of `skin-smith.py` → **Set as EVENT not Filter** → **Save**.
 
 3. Open `http://<open-webui host>/skin` — Skin-Smith's converter page is live.
 
