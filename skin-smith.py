@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.6
+version: 0.6.7
 """
 
 import hashlib
@@ -3918,9 +3918,12 @@ def _meta_write(fn_id, css):
         pass
 
 async def _is_admin(request):
-    # Gate for /skin/save: require an admin session, resolved version-agnostically
-    # (the session util's module path and signature drift between Open WebUI versions).
-    if not request.cookies.get("session_token"):
+    # Gate for /skin/save and /skin: require an admin session, resolved
+    # version-agnostically. 1) the session util (module path + signature drift
+    # between Open WebUI versions); 2) decode the session JWT and read the
+    # user's role from the DB directly (same approach as persistence).
+    token = request.cookies.get("session_token")
+    if not token:
         return False
     import inspect
     for modpath in ("open_webui.apps.webui.utils", "open_webui.utils.auth"):
@@ -3930,7 +3933,7 @@ async def _is_admin(request):
             if f is None:
                 continue
             user = None
-            for args in ((request,), (request, None)):
+            for args in ((request,), (request, None), (request, None, None)):
                 try:
                     user = f(*args)
                     break
@@ -3944,6 +3947,50 @@ async def _is_admin(request):
                 return True
         except Exception:
             continue
+    # 2) direct JWT decode + user row read
+    try:
+        import jwt
+        env = __import__("open_webui.env", fromlist=["JWT_SECRET_KEY"])
+        secret = None
+        for name in ("JWT_SECRET_KEY", "JWT_SECRET", "SECRET_KEY"):
+            secret = getattr(env, name, None)
+            if secret:
+                break
+        if not secret:
+            return False
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
+        uid = payload.get("id")
+        if not uid:
+            return False
+        try:
+            from open_webui.models.users import Users
+            u = Users.get_user_by_id(uid)
+            if inspect.iscoroutine(u):
+                u = await u
+            if u is not None and (getattr(u, "role", None) == "admin" or getattr(u, "is_admin", False)):
+                return True
+        except Exception:
+            pass
+        eng = _meta_engine()
+        if eng is None:
+            return False
+        from sqlalchemy import table, column, select
+        t = table("user", column("id"), column("role"), column("is_admin"))
+        with eng.connect() as conn:
+            try:
+                row = conn.execute(select(t.c.role).where(t.c.id == uid)).first()
+                if row and row[0] == "admin":
+                    return True
+            except Exception:
+                pass
+            try:
+                row = conn.execute(select(t.c.is_admin).where(t.c.id == uid)).first()
+                if row and row[0] in (True, 1, "true", "1"):
+                    return True
+            except Exception:
+                pass
+    except Exception:
+        pass
     return False
 
 def _ensure_pages(app):
