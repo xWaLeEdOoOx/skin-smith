@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.3
+version: 0.6.4
 """
 
 import hashlib
@@ -3950,6 +3950,8 @@ def _ensure_pages(app):
     # Define handlers first (insert() references them), then insert the
     # routes BEFORE the SPA catch-all so it never shadows /skin.
     async def theme_page(request):
+        if not await _is_admin(request):
+            return HTMLResponse("<!doctype html><title>Skin-Smith</title><body style='font-family:system-ui;background:#171717;color:#e6e6e6;display:grid;place-items:center;min-height:100vh'><div style='text-align:center'><h1>Skin-Smith</h1><p>Admin tool — sign in as an admin to open the converter.</p></div></body>", status_code=403)
         return HTMLResponse(THEME_PAGE_HTML)
 
     async def theme_converter_js(request):

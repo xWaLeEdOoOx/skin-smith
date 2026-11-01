@@ -42,7 +42,7 @@
 ## Use
 
 1. Make your theme in the [TDP Studio](https://silentoplayz.github.io/theme-designer-pro-presets/studio/) and export its JSON.
-2. Open `http://<open-webui host>/skin`.
+2. Sign in as an **admin** and open `http://<open-webui host>/skin`.
 3. Paste/upload the JSON (or hit **Load sample**), switch Dark / Light / OLED / Her to preview it live.
 4. **Apply & Save** — the CSS is served as `/static/custom.css` for all users, persisted across restarts (function meta, with a direct DB fallback for builds where the functions model module is broken). Requires an **admin session**. **Restore default** clears it back to Open WebUI's own default.
 
