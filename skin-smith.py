@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.7
+version: 0.6.8
 """
 
 import hashlib
@@ -4013,6 +4013,80 @@ def _ensure_pages(app):
     async def theme_css(request):
         return Response(_active_css(app), media_type="text/css; charset=utf-8")
 
+    async def theme_debug(request):
+        # TEMP diagnostic for the admin gate: shows what _is_admin sees.
+        # Open only to users with a session cookie; prints resolution steps,
+        # never secret values. Remove after the gate is fixed.
+        token = request.cookies.get("session_token")
+        if not token:
+            return Response("Login required for diagnostics.", status_code=403, media_type="text/plain")
+        lines = ["cookie session_token: present"]
+        import inspect
+        for modpath in ("open_webui.apps.webui.utils", "open_webui.utils.auth"):
+            try:
+                m = __import__(modpath, fromlist=["get_user_from_session"])
+                f = getattr(m, "get_user_from_session", None)
+                lines.append("%s: get_user_from_session=%s" % (modpath, "found" if f else "MISSING"))
+                if f:
+                    user = None
+                    for args in ((request,), (request, None), (request, None, None)):
+                        try:
+                            user = f(*args)
+                            lines.append("  probe %d args ok -> %s" % (len(args), type(user).__name__))
+                            break
+                        except Exception as e:
+                            lines.append("  probe %d args: %s: %s" % (len(args), type(e).__name__, str(e)[:120]))
+                    if inspect.iscoroutine(user):
+                        user = await user
+                        lines.append("  coroutine resolved -> %s" % type(user).__name__)
+                    if user is not None:
+                        lines.append("  role=%r is_admin=%r" % (getattr(user, "role", None), getattr(user, "is_admin", None)))
+            except Exception as e:
+                lines.append("%s: import %s: %s" % (modpath, type(e).__name__, str(e)[:120]))
+        try:
+            import jwt
+            env = __import__("open_webui.env", fromlist=["JWT_SECRET_KEY"])
+            lines.append("env secrets: %s" % {n: ("set" if getattr(env, n, None) else None) for n in ("JWT_SECRET_KEY", "JWT_SECRET", "SECRET_KEY")})
+            secret = None
+            for n in ("JWT_SECRET_KEY", "JWT_SECRET", "SECRET_KEY"):
+                secret = getattr(env, n, None)
+                if secret:
+                    break
+            try:
+                payload = jwt.decode(token, secret, algorithms=["HS256"])
+                uid = payload.get("id")
+                lines.append("jwt decoded: uid=%r exp=%r keys=%s" % (uid, payload.get("exp"), sorted(payload.keys())))
+                try:
+                    from open_webui.models.users import Users
+                    u = Users.get_user_by_id(uid)
+                    if inspect.iscoroutine(u):
+                        u = await u
+                    lines.append("Users.get_user_by_id -> role=%r" % (getattr(u, "role", None) if u is not None else None))
+                except Exception as e:
+                    lines.append("Users model: %s: %s" % (type(e).__name__, str(e)[:120]))
+                eng = _meta_engine()
+                lines.append("engine: %s" % (str(eng.url) if eng is not None else None))
+                if eng is not None:
+                    from sqlalchemy import table, column, select
+                    t = table("user", column("id"), column("role"), column("is_admin"))
+                    with eng.connect() as conn:
+                        try:
+                            row = conn.execute(select(t.c.role).where(t.c.id == uid)).first()
+                            lines.append("db role=%r" % (row[0] if row else None))
+                        except Exception as e:
+                            lines.append("db role: %s: %s" % (type(e).__name__, str(e)[:120]))
+                        try:
+                            row = conn.execute(select(t.c.is_admin).where(t.c.id == uid)).first()
+                            lines.append("db is_admin=%r" % (row[0] if row else None))
+                        except Exception as e:
+                            lines.append("db is_admin: %s: %s" % (type(e).__name__, str(e)[:120]))
+            except Exception as e:
+                lines.append("jwt decode: %s: %s" % (type(e).__name__, str(e)[:160]))
+        except Exception as e:
+            lines.append("jwt path: %s: %s" % (type(e).__name__, str(e)[:160]))
+        lines.append("gate result: %s" % await _is_admin(request))
+        return Response("\n".join(lines), media_type="text/plain")
+
     async def theme_save(request):
         if not await _is_admin(request):
             return Response("Not allowed. Admin session required.", status_code=403, media_type="text/plain")
@@ -4035,7 +4109,7 @@ def _ensure_pages(app):
             if getattr(r, "path", "") in ("", "/"):
                 return i
         return len(routes)
-    routes_spec = [("/skin", theme_page, "GET"), ("/skin/converter.js", theme_converter_js, "GET"), ("/skin/preview.js", theme_preview_js, "GET"), ("/skin/owui-logo.png", theme_logo, "GET"), ("/skin/css", theme_css, "GET"), ("/skin/save", theme_save, "POST")]
+    routes_spec = [("/skin", theme_page, "GET"), ("/skin/converter.js", theme_converter_js, "GET"), ("/skin/preview.js", theme_preview_js, "GET"), ("/skin/owui-logo.png", theme_logo, "GET"), ("/skin/css", theme_css, "GET"), ("/skin/debug", theme_debug, "GET"), ("/skin/save", theme_save, "POST")]
     paths = tuple(p for p, h, m in routes_spec)
     # Always re-register: a Starlette Route binds dispatch at construction,
     # so a function edit MUST rebuild the Route objects around the fresh
