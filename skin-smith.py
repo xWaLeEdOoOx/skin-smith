@@ -3,8 +3,31 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.12
+version: 0.6.13
 """
+
+# Portions of this file (the converter math, preview engine, and shared
+# asset-registry contract) are ported verbatim from Theme Designer Pro:
+# https://github.com/silentoplayz/theme-designer-pro-presets
+# Copyright (c) 2026 silentoplayz — MIT License:
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import hashlib
 import re
@@ -3985,10 +4008,16 @@ async def _is_admin(request):
         # per-user revocation). A leaked admin token must NOT keep working
         # after the session is revoked. If the revocation helper exists, it
         # must pass; old builds have no revocation system and fall through.
+        # Open WebUI treats a raise here (missing/inactive account, DB error)
+        # as a refusal, so when the helper exists a raise denies too.
+        f = None
         try:
             m = __import__("open_webui.utils.auth", fromlist=["is_valid_token"])
             f = getattr(m, "is_valid_token", None)
-            if f is not None:
+        except Exception:
+            f = None
+        if f is not None:
+            try:
                 state = getattr(getattr(request, "app", None), "state", None)
                 redis = getattr(state, "redis", None) if state is not None else None
                 ok = f(payload, redis)
@@ -3996,8 +4025,8 @@ async def _is_admin(request):
                     ok = await ok
                 if not ok:
                     return False
-        except Exception:
-            pass
+            except Exception:
+                return False
         try:
             from open_webui.models.users import Users
             u = Users.get_user_by_id(uid)
