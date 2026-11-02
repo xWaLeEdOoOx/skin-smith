@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.6.13
+version: 0.6.14
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -372,12 +372,18 @@ CONVERTER_SRC = r"""/* =========================================================
 
   // ---- CSS assembly ----
 
-  // Open WebUI's mode selectors, as buildMockSrcdoc sets them on <html>
+  // Open WebUI marks the theme with CLASSES on <html>, never data-theme:
+  // app.html + Settings/General.svelte applyTheme():
+  //   dark/system-dark -> .dark; light/system-light -> .light;
+  //   her -> .her (and .light after a settings change);
+  //   oled-dark -> .dark + inline true-black --color-gray-800..950.
+  // So OLED rides on .dark, emitted after the dark block: its !important
+  // black values win whenever the inline markers are present.
   const SELECTORS = {
     dark: '.dark',
-    light: "[data-theme='light']",
-    her: "[data-theme='her']",
-    oled: "[data-theme='oled-dark']",
+    light: '.light',
+    her: '.her',
+    oled: '.dark',
   };
 
   // OLED renders on true black in Open WebUI (Settings/General.svelte L182-186)
