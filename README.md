@@ -67,3 +67,5 @@ Running Skin-Smith **and** Theme Designer Pro at the same time is redundant: bot
 - **Open WebUI:** https://github.com/open-webui/open-webui
 
 *Skin-Smith: Made by Waleed Kh. Tolbah (AKA xWaLeEdOoOx), released with respect and gratitude to the Theme Designer Pro team and Open-WebUI for their great efforts and amazing work*
+
+*Portions of Skin-Smith are based on or inspired by Theme Designer Pro by @G30. Used and adapted with permission under the MIT License.*
