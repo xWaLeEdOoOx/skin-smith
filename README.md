@@ -5,7 +5,7 @@
 
 **A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.6.13).** The conversion engine is proven; UI and persistence are being exercised in the field. Please report issues.
+> **Beta (v0.6.14).** The conversion engine is proven; UI and persistence are being exercised in the field. Please report issues.
 
 ## What it is
 
