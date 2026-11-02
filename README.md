@@ -5,7 +5,7 @@
 
 **A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.6.12).** The conversion engine is proven; UI and persistence are being exercised in the field. Please report issues.
+> **Beta (v0.6.13).** The conversion engine is proven; UI and persistence are being exercised in the field. Please report issues.
 
 ## What it is
 
@@ -55,6 +55,7 @@ Running Skin-Smith **and** Theme Designer Pro at the same time is redundant: bot
 | File | Purpose |
 |------|---------|
 | `skin-smith.py` | The entire extension. Paste into Open WebUI → Functions. |
+| `LICENSE` | Theme Designer Pro's MIT License — the palette/gradient math and the shared-asset registry contract are ported verbatim from TDP, (c) 2026 silentoplayz. The MIT notice is also embedded in `skin-smith.py`. |
 | `OI-README.md` | The Open WebUI community post copy. |
 | `assets/cover.png` | The README cover image. |
 

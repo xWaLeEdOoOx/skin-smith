@@ -2,13 +2,13 @@
 
 **A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.6.12).** The conversion engine is proven, but the UI and persistence are still being exercised in the field. Please report issues.
+> **Beta (v0.6.13).** The conversion engine is proven, but the UI and persistence are still being exercised in the field. Please report issues.
 
 ## Why I made this
 
 [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) is brilliant — and, like any full-featured extension, it carries a lot of runtime (SSE, Web Workers, Canvas FX, fonts, scripts) to get there. I wanted the **engine's result** on my Open WebUI with **one small file**: Skin-Smith takes what TDP produces from a theme JSON (palette, accents, manual overrides, gradient, custom CSS) and loads it as Open WebUI Custom CSS — that's all it does. Skin-Smith is the engine; TDP is the paint.
 
-Skin-Smith is made **with love for the Theme Designer Pro team's work**. Every line of palette, accent, and gradient math is ported **verbatim** from their official code, with their documentation shipped alongside. We deliberately ship **no CSS library of our own** — the one exception is an Indigo sample draft that lights up the preview generator. The themes should come from the masters. The previewer is TDP's own previewer, too — I haven't gotten around to stripping it down to show only the CSS changes, so you'll see a bit more than the final CSS. Make your theme here:
+Skin-Smith is made **with love for the Theme Designer Pro team's work**. Every line of palette, accent, and gradient math is ported **verbatim** from their official code, with their documentation shipped alongside — and, as the MIT License asks, their notice (TDP `LICENSE`, (c) 2026 silentoplayz) is embedded in the file and shipped in this repo. We deliberately ship **no CSS library of our own** — the one exception is an Indigo sample draft that lights up the preview generator. The themes should come from the masters. The previewer is TDP's own previewer, too — I haven't gotten around to stripping it down to show only the CSS changes, so you'll see a bit more than the final CSS. Make your theme here:
 
 **🎨 Theme Designer Pro Studio → https://silentoplayz.github.io/theme-designer-pro-presets/studio/**
 
