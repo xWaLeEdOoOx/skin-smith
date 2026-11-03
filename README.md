@@ -34,7 +34,8 @@
    git clone https://github.com/xWaLeEdOoOx/skin-smith.git
    ```
 
-   (or just download `skin-smith.py` from the repo)
+   (or just download `skin-smith.py` from the repo — the latest release, with
+   the full changelog, is [here](https://github.com/xWaLeEdOoOx/skin-smith/releases))
 
 2. In Open WebUI: right-click your username → **Admin Panel → Functions** → **Create** → paste the full contents of `skin-smith.py` → **Set as EVENT not Filter** → **Save**.
 
