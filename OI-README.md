@@ -1,8 +1,8 @@
 ## Skin-Smith
 
-**A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
+**A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. Keep your themes in the built-in library and switch between them anytime. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.7.1).** The conversion engine is proven, but the UI and persistence are still being exercised in the field. Please report issues.
+> **Beta (v0.8.4).** Now supports **Open WebUI 0.11.0+**. New in this line: a **Theme Manager** — save up to 12 themes in a library, pick and apply any of them, all **persisted across Open WebUI restarts**; a **security update** (every state endpoint is admin-gated server-side, with token-revocation checks); and a full **UI/UX overhaul** of the `/skin` page. The conversion engine is proven; please report issues.
 
 ## Why I made this
 
@@ -16,7 +16,7 @@ Export the theme JSON, paste it into Skin-Smith, and your theme is live.
 
 ## Install
 
-**Open WebUI ≥ 0.12.0 required.**
+**Open WebUI ≥ 0.11.0 required.** Works on **SQLite** and **PostgreSQL** — persistence confirmed in the field on both.
 
 - **Manual:** right-click your username → **Admin Panel → Functions** → **Import JSON** and Upload the function JSON (`skin-smith.json`) → **Save**.
 - **One-click:** Click **Get** in the Open-WebUI Community Post and point it to your server → **Save**.
@@ -25,8 +25,9 @@ Export the theme JSON, paste it into Skin-Smith, and your theme is live.
 
 1. Make your theme in the [TDP Studio](https://silentoplayz.github.io/theme-designer-pro-presets/studio/) and export its JSON.
 2. Sign in as an **admin** and open `http://<open-webui host>/skin` — Skin-Smith's converter page.
-3. Paste/upload the JSON (or hit **Load sample**), switch Dark / Light / OLED / Her to preview it live.
-4. **Apply & Save** — the CSS is served as `/static/custom.css` for all users, persisted across restarts (function meta, with a direct DB fallback for builds where the functions model module is broken). Requires an **admin session**. **Restore default** clears it back to Open WebUI's own default.
+3. **Theme Manager:** name the theme and hit **Save as new** — it lands in the library (up to 12). Pick any saved theme from the dropdown to load it back, **Update slot** to overwrite, **Delete slot** to remove. The library **and** the applied theme are persisted across Open WebUI restarts.
+4. Paste/upload the JSON (or hit **Load sample**), switch Dark / Light / OLED / Her to preview it live.
+5. **Apply & Save** — the CSS is served as `/static/custom.css` for all users, persisted across restarts (function meta, with a direct DB fallback for builds where the functions model module is broken). Requires an **admin session**. **Restore default** clears it back to Open WebUI's own default.
 
 ## A note on running Skin-Smith together with Theme Designer Pro
 
