@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.12.0
-version: 0.8.0
+version: 0.8.1
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -4154,8 +4154,7 @@ def _ensure_pages(app):
     async def theme_slots_get(request):
         # Library listing is admin-gated too: the /skin page is already
         # client-gated, so an open read buys nothing — the whole library stays
-        # admin-only. (4.1, non-admin read-only preview, will need its own
-        # deliberately-open read path.)
+        # admin-only. /skin is an admin tool; no non-admin read path exists.
         if not await _is_admin(request):
             return Response("Not allowed. Admin session required.", status_code=403, media_type="text/plain")
         return Response(slots_payload(), media_type="application/json; charset=utf-8")
