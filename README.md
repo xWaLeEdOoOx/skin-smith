@@ -22,8 +22,8 @@
 
 ## Requirements
 
-- **Open WebUI ≥ 0.12.0**
-- SQLite **or** PostgreSQL — persistence works on both, tested.
+- **Open WebUI ≥ 0.11.0**
+- **SQLite** and **PostgreSQL** — persistence confirmed in the field on both (PostgreSQL on a live Postgres-backed Open WebUI, SQLite on a SQLite install).
 
 ## Install (manual)
 

@@ -16,7 +16,7 @@ Export the theme JSON, paste it into Skin-Smith, and your theme is live.
 
 ## Install
 
-**Open WebUI ≥ 0.12.0 required.**
+**Open WebUI ≥ 0.11.0 required.** Works on **SQLite** and **PostgreSQL** — persistence confirmed in the field on both.
 
 - **Manual:** right-click your username → **Admin Panel → Functions** → **Import JSON** and Upload the function JSON (`skin-smith.json`) → **Save**.
 - **One-click:** Click **Get** in the Open-WebUI Community Post and point it to your server → **Save**.
