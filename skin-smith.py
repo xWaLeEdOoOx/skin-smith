@@ -403,19 +403,25 @@ CONVERTER_SRC = r"""/* =========================================================
     return `${selector} {\n${lines.join('\n')}\n}`;
   }
 
-  // Gradient block, mirroring buildMockSrcdoc's gradient section
-  function gradientBlock(g) {
+  // Gradient block, mirroring buildMockSrcdoc's gradient section, scoped to the
+  // mode's real selector. Open WebUI puts the mode class on <html>, so the
+  // gradient rides `.dark body` / `.light body` / `.her body`, and OLED rides the
+  // inline true-black marker — never `.dark` (the same anti-leak rule as the
+  // OLED vars block). Keyframes are NOT emitted here: one shared set is emitted
+  // after all mode blocks.
+  const GRADIENT_KEYFRAMES = '@keyframes tdp-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }';
+
+  function gradientBlock(g, selector) {
     const layers = gradientLayers(g);
-    if (!layers) return '';
+    if (!layers) return null;
     const bg = layers.background ? `background-color: ${layers.background} !important;` : '';
     const anim = layers.animated
       ? `background-size: 300% 300% !important; animation: tdp-gradient-shift ${layers.speed}s ease infinite;`
       : '';
-    let css = `body { ${bg} background-image: ${layers.backgroundImage} !important; background-attachment: fixed !important; ${anim} }`;
-    if (layers.animated) {
-      css += `\n@keyframes tdp-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`;
-    }
-    return css;
+    return {
+      css: `${selector} body { ${bg} background-image: ${layers.backgroundImage} !important; background-attachment: fixed !important; ${anim} }`,
+      animated: layers.animated,
+    };
   }
 
   // @keyframes hoisting, ported from TDP's extractKeyframes
@@ -485,18 +491,28 @@ CONVERTER_SRC = r"""/* =========================================================
       parts.push(varsBlock(SELECTORS[k], vars));
     });
 
-    // Gradient: the theme's gradient config, emitted once on body.
-    // A mode's gradient* fields count when gradientEnabled is set; the first
-    // enabled mode wins (dark first, as the designer applies it).
-    let grad = null;
-    for (const k of MODES) {
-      const mode = readMode(theme, k);
-      if (mode.gradientEnabled) { grad = gradientBlock(mode); break; }
-    }
-    if (grad) {
+    // Gradient: every enabled mode gets its OWN gradient, scoped to Open WebUI's
+    // real classes — exactly what the preview shows per mode (studio.js
+    // previewOpts() calls gradientLayers(mode) for each mode; the designer applies
+    // the active mode's). Emit in dark -> light -> oled -> her order so
+    // `.her body` wins when <html> carries .her plus .light (the
+    // her-after-settings quirk), and OLED rides the style-attribute selector.
+    // One shared @keyframes, emitted once. No bare body rule: pages with no mode
+    // class keep Open WebUI's own background.
+    const grads = [];
+    let animated = false;
+    MODES.forEach((k) => {
+      const block = gradientBlock(readMode(theme, k), SELECTORS[k]);
+      if (block) {
+        grads.push(block.css);
+        if (block.animated) animated = true;
+      }
+    });
+    if (grads.length) {
       parts.push('');
       parts.push('/* Gradient background */');
-      parts.push(grad);
+      parts.push(grads.join('\n'));
+      if (animated) parts.push(GRADIENT_KEYFRAMES);
     }
 
     // Custom CSS: each mode's block, scoped exactly as TDP's buildCustomCss

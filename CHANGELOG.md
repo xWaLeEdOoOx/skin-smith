@@ -5,6 +5,16 @@ function docstring of `skin-smith.py` (`version:`).
 
 ## v0.9.1 — 2026-11-03
 
+- **Every mode gets its own gradient.** The theme JSON carries a full gradient
+  per mode (type, angle, stops, intensity, animation, radial geometry, mesh
+  points), and the preview has always shown the active mode's. The emitted CSS
+  used to ship only the first enabled mode's gradient, on a bare `body` — so
+  Light, Her and OLED users saw the dark theme's background. Gradients are now
+  scoped to Open WebUI's real classes: `.dark body`, `.light body`, `.her body`,
+  and the OLED inline true-black marker (never `.dark`), emitted in dark →
+  light → oled → her order so `.her body` wins when `<html>` carries `.her` plus
+  `.light`. One shared `@keyframes` is emitted once. Pages with no mode class
+  keep Open WebUI's own background.
 - **Custom CSS now scopes exactly as TDP does.** A theme whose custom CSS starts
   with `:root` (the common case) used to ship **inert** CSS: wrapping it inside a
   mode block compiles to `.dark :root` / `.dark html`, which never matches. TDP's
