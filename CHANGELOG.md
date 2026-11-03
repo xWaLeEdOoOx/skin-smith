@@ -3,6 +3,16 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.5 — 2026-11-03
+
+- **Conic gradients are real `conic-gradient()`s.** The theme JSON admits the
+  `conic` gradient type; TDP's own generator emits
+  `conic-gradient(from Xdeg, stops)`. Skin-Smith fell conic through to
+  `linear-gradient`, so a conic theme shipped the wrong shape. The converter
+  now emits the real conic — same stops, same intensity math, angle default
+  135 — matching what TDP serves. The preview engine is untouched (TDP math
+  verbatim); the emitted CSS is now TDP-faithful for conic themes.
+
 ## v0.9.4 — 2026-11-03
 
 - **`autoScope: false` verified end-to-end** (the raw pass-through TDP ships):

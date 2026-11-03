@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.11.0
-version: 0.9.4
+version: 0.9.5
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -341,6 +341,12 @@ CONVERTER_SRC = r"""/* =========================================================
       const x = firstOf(g.radialPosX, g.gradientRadialPosX, 50);
       const y = firstOf(g.radialPosY, g.gradientRadialPosY, 50);
       fn = `radial-gradient(${shape} ${size} at ${x}% ${y}%, ${stopsStr})`;
+    } else if (type === 'conic') {
+      // TDP's own generator emits a real conic-gradient (buildGradientCss
+      // honours the conic enum with conic-gradient(from Xdeg, stops)), so the
+      // served CSS matches what TDP serves. Same stops, same intensity math.
+      const angle = firstOf(g.angle, g.gradientAngle, 135);
+      fn = `conic-gradient(from ${angle}deg, ${stopsStr})`;
     } else {
       const angle = firstOf(g.angle, g.gradientAngle, 135);
       fn = `linear-gradient(${angle}deg, ${stopsStr})`;
