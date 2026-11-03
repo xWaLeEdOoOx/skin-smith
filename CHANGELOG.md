@@ -3,7 +3,7 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
-## v0.9.1 — 2026-11-03
+## v0.9.2 — 2026-11-03
 
 - **Every mode gets its own gradient.** The theme JSON carries a full gradient
   per mode (type, angle, stops, intensity, animation, radial geometry, mesh
@@ -15,6 +15,9 @@ function docstring of `skin-smith.py` (`version:`).
   light → oled → her order so `.her body` wins when `<html>` carries `.her` plus
   `.light`. One shared `@keyframes` is emitted once. Pages with no mode class
   keep Open WebUI's own background.
+
+## v0.9.1 — 2026-11-03
+
 - **Custom CSS now scopes exactly as TDP does.** A theme whose custom CSS starts
   with `:root` (the common case) used to ship **inert** CSS: wrapping it inside a
   mode block compiles to `.dark :root` / `.dark html`, which never matches. TDP's
