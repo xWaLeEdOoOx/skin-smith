@@ -418,6 +418,52 @@ CONVERTER_SRC = r"""/* =========================================================
     return css;
   }
 
+  // @keyframes hoisting, ported from TDP's extractKeyframes
+  // (theme_designer_pro_event.py L11376). A @keyframes block nested inside a
+  // scoped rule is not CSS, so it moves out of the block. Comments and strings
+  // are blanked to spaces first (same length, indices line up): a brace or
+  // @keyframes inside a comment is not CSS. An unbalanced block stays put.
+  function extractKeyframes(css) {
+    let keyframes = '';
+    let cleaned = css;
+    let shadow = css.replace(/\/\*[\s\S]*?(?:\*\/|$)|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, (m) => ' '.repeat(m.length));
+    let from = 0;
+    let start = shadow.indexOf('@keyframes', from);
+    while (start !== -1) {
+      let open = 0, i = start, started = false, end = -1;
+      while (i < shadow.length) {
+        if (shadow[i] === '{') { open++; started = true; }
+        else if (shadow[i] === '}') { open--; }
+        i++;
+        if (started && open === 0) { end = i; break; }
+      }
+      if (end === -1) break;
+      keyframes += cleaned.substring(start, end) + '\n';
+      cleaned = cleaned.substring(0, start) + cleaned.substring(end);
+      shadow = shadow.substring(0, start) + shadow.substring(end);
+      from = start;
+      start = shadow.indexOf('@keyframes', from);
+    }
+    return { keyframes, cleanedCss: cleaned };
+  }
+
+  // Custom CSS block, mirroring TDP's buildCustomCss
+  // (theme_designer_pro_event.py L11585-11600). A nested :root / html inside a
+  // scoped block compiles to ".dark :root" / ".dark html", which never matches,
+  // so TDP turns them into & (the parent selector) and hoists @keyframes out.
+  // autoScope false = raw pass-through, :root rewritten to :is(selector).
+  function customBlock(mode, k, selector) {
+    if (!mode.customCssEnabled || typeof mode.customCSS !== 'string' || !mode.customCSS.trim()) return '';
+    const cssText = mode.customCSS.trim();
+    const header = `/* Custom CSS (${k}) */`;
+    if (mode.autoScope === false) {
+      return `${header}\n${cssText.replace(/:root/gi, ':is(' + selector + ')')}`;
+    }
+    const kf = extractKeyframes(cssText);
+    const scoped = kf.cleanedCss.replace(/:root/gi, '&').replace(/(^|[\s,{};(])html(?=[\s.,:\[#{>+~)]|$)/gi, '$1&');
+    return `${header}\n${selector} {\n${scoped}\n}\n${kf.keyframes}`;
+  }
+
   // Full convert: theme JSON object -> one CSS string for Settings -> Interface -> Custom CSS
   function convert(theme) {
     if (typeof theme === 'string') theme = JSON.parse(theme);
@@ -453,14 +499,10 @@ CONVERTER_SRC = r"""/* =========================================================
       parts.push(grad);
     }
 
-    // Custom CSS: each mode's block, scoped to its selector, passed through as-is
+    // Custom CSS: each mode's block, scoped exactly as TDP's buildCustomCss
     MODES.forEach((k) => {
-      const mode = readMode(theme, k);
-      if (mode.customCssEnabled && typeof mode.customCSS === 'string' && mode.customCSS.trim()) {
-        parts.push('');
-        parts.push(`/* Custom CSS (${k}) */`);
-        parts.push(`${SELECTORS[k]} {\n${mode.customCSS.trim()}\n}`);
-      }
+      const block = customBlock(readMode(theme, k), k, SELECTORS[k]);
+      if (block) { parts.push(''); parts.push(block); }
     });
 
     return parts.join('\n');
