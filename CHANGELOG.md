@@ -1,0 +1,97 @@
+# Changelog
+
+All notable changes to Skin-Smith, newest first. The version number lives in the
+function docstring of `skin-smith.py` (`version:`).
+
+## v0.8.4 — 2026-11-03
+
+- **Theme Manager** (new in the 0.8 line): up to 12 themes stored in the function
+  meta key `tdp_slots`; a dropdown on `/skin` with full CRUD — Save as new,
+  Update slot, Delete slot. Applying a saved theme reuses `/skin/save`, so the
+  admin gate, persistence, and the exact success message are unchanged. The
+  library **and** the applied theme survive Open WebUI restarts.
+- **Security**: `GET /skin/slots` is gated by the same admin gate as the slot
+  writes and `/skin/save` — the theme library has no unauthenticated read path.
+  `/skin/css` (the engine's own CSS output) stays public by design, as
+  `/static/custom.css` is served to every user.
+- **UI/UX overhaul** of the `/skin` page (frosted slate): design tokens in
+  `:root`, sticky glass top bar with the applied-theme chip, Library / Source /
+  Preview cards, segmented mode tabs in the preview header, one unified button
+  family, styled select, mono editor, full-width layout, `box-sizing` fix so the
+  editor never overflows its card, `prefers-reduced-motion` and
+  `prefers-reduced-transparency` fallbacks.
+- **Feel**: the status chip is a state chip (neutral while saving, green
+  success, red failure, 160ms slide-in); `Apply & Save` shows a saving state and
+  restores; `Ctrl+Enter` / `Cmd+Enter` applies the current JSON; the preview
+  cross-fades on every re-render; empty-library message in the applied chip; an
+  `n / 12` library counter that turns red at the cap.
+- **Compatibility**: floor lowered to **Open WebUI 0.11.0** (field-confirmed), so
+  more installs can run Skin-Smith.
+- Persistence confirmed in the field on **PostgreSQL** and **SQLite**.
+
+## v0.7.1 — 2026-11-02
+
+- OLED scoped to its real fingerprint:
+  `html[style*='--color-gray-800: #101010']`. Open WebUI sets the true-black
+  variables inline on `<html>` only for OLED Dark, so riding OLED on `.dark` no
+  longer leaks the true-black palette into plain Dark. Light and Her unchanged.
+
+## v0.6.14 — 2026-11-02
+
+- Mode blocks scope to Open WebUI's real `<html>` classes (`.dark` / `.light` /
+  `.her`). Open WebUI never sets a `data-theme` attribute, so the Light / OLED /
+  Her blocks never matched and only Dark applied. The preview keeps TDP's own
+  `data-theme` convention, unchanged.
+
+## v0.6.13 — 2026-11-02
+
+- Revocation hardening: when Open WebUI's `is_valid_token` helper **raises**
+  (missing/inactive account, DB error) the gate denies, matching Open WebUI.
+  Reported by the TDP author.
+- TDP's MIT `LICENSE` added to the repo, with the notice embedded in
+  `skin-smith.py`.
+
+## v0.6.12 — 2026-11-02
+
+- Revocation check in the gate's JWT path: `open_webui.utils.auth.is_valid_token`
+  is probed after decoding, so a revoked admin token (session stamp change,
+  password change, Redis revocation) is denied immediately. Builds without the
+  revocation system fall through to the role check.
+
+## v0.6.11 — 2026-11-02
+
+- Temporary `/skin/debug` route removed (the gate confirmed in the field).
+
+## v0.6.10 — 2026-11-02
+
+- Gate aligned with Open WebUI's current auth: the session cookie is named
+  `token` (Secure-flagged, so absent on http), the official
+  `get_optional_verified_user_from_request` probe is used, the env secret is
+  `WEBUI_SECRET_KEY`, and the page sends `Authorization: Bearer` from
+  `localStorage.token`.
+
+## v0.6.9 — 2026-11-02
+
+- Server gate accepts the session cookie **or** `Authorization: Bearer`; the
+  `/skin` page is gated client-side by role, and its fetches carry the bearer
+  token.
+
+## v0.6.8 — 2026-11-02
+
+- The admin gate for `/skin/save` (Apply & Save and Restore default) added,
+  after the TDP authors' private report. Non-admin POSTs get
+  `Not allowed. Admin session required.` with 403.
+
+## v0.6.6 — 2026-11-02
+
+- Route re-registration fix: `_ensure_pages` always removes the `/skin*` routes
+  and inserts fresh `Route` objects before the SPA catch-all, so pasting a new
+  function version takes effect immediately (Starlette binds dispatch at
+  construction — mutating an existing endpoint is a no-op).
+
+## Earlier
+
+The first line (v0.1 → v0.6.7) built the converter (TDP math ported verbatim),
+the `/skin` page, the previewer, persistence via function meta with a direct DB
+fallback, and `/static/custom.css` serving. See the commit history for the
+step-by-step.

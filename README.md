@@ -59,6 +59,7 @@ Running Skin-Smith **and** Theme Designer Pro at the same time is redundant: bot
 | `skin-smith.py` | The entire extension. Paste into Open WebUI → Functions. |
 | `LICENSE` | Theme Designer Pro's MIT License — the palette/gradient math and the shared-asset registry contract are ported verbatim from TDP, (c) 2026 silentoplayz. The MIT notice is also embedded in `skin-smith.py`. |
 | `OI-README.md` | The Open WebUI community post copy. |
+| `CHANGELOG.md` | Version history of Skin-Smith, newest first. |
 | `assets/cover.png` | The README cover image. |
 
 ## Links
