@@ -3,6 +3,25 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.3 — 2026-11-03
+
+- **The gradient is now visible.** Open WebUI paints opaque panels
+  (`.app`, `main`, every `bg-gray-*` utility, message content, sticky bars,
+  the chat overlay) on top of the page, so a scoped gradient sat **hidden**
+  behind them. Skin-Smith now emits TDP's structural layer: the body and
+  sidebar base colour for every mode, and for modes with a gradient the full
+  transparency clear — `.app` cleared with `position: relative`, `main`,
+  `.app > div`, the `bg-gray-*` utilities (with TDP's guard list: buttons,
+  links, inputs, labels, spans and the user's own message bubble keep their
+  backgrounds), `.message-content`, `nav` and sticky bars — plus the gradient
+  section's own extras: Open WebUI's `body::before` removed, the chat overlay
+  and the sidebar tinted with the gradient's base colour (the darkest stop),
+  sidebar blur. TDP's designer/auth selectors are dropped (Skin-Smith has no
+  designer page).
+- Emission-only change: the converter math, the shared-asset registry block,
+  the page's element-ID contract, the admin gate, the persistence layer and
+  the exact success message are untouched.
+
 ## v0.9.2 — 2026-11-03
 
 - **Every mode gets its own gradient.** The theme JSON carries a full gradient
