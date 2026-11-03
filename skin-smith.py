@@ -4152,9 +4152,12 @@ def _ensure_pages(app):
         })
 
     async def theme_slots_get(request):
-        # Read-only library listing, open server-side like /skin: the page is
-        # client-gated, themes are not secrets, and a non-admin reading the
-        # library is the groundwork for read-only preview. Writes are gated.
+        # Library listing is admin-gated too: the /skin page is already
+        # client-gated, so an open read buys nothing — the whole library stays
+        # admin-only. (4.1, non-admin read-only preview, will need its own
+        # deliberately-open read path.)
+        if not await _is_admin(request):
+            return Response("Not allowed. Admin session required.", status_code=403, media_type="text/plain")
         return Response(slots_payload(), media_type="application/json; charset=utf-8")
 
     async def theme_slots_save(request):
