@@ -3,6 +3,20 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.4 — 2026-11-03
+
+- **`autoScope: false` verified end-to-end** (the raw pass-through TDP ships):
+  a theme that turns auto-scoping off emits its custom CSS **raw**, with
+  `:root` rewritten to `:is(selector)` and every other rule left exactly as
+  written — including an `html` block, which TDP's raw branch deliberately
+  does not rewrite (the user opted out of scoping). The path shipped with
+  v0.9.1; this version pins it with explicit assertions: raw text outside any
+  scope wrapper, `:root` → `:is(.her)`, `html` verbatim, and the scoped-mode
+  check that no bare `html` block survives the scoped transform.
+- No emission change: the converter math, the shared-asset registry block,
+  the page's element-ID contract, the admin gate, the persistence layer and
+  the exact success message are untouched.
+
 ## v0.9.3 — 2026-11-03
 
 - **The gradient is now visible.** Open WebUI paints opaque panels
