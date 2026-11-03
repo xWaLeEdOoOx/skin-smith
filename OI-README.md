@@ -2,7 +2,7 @@
 
 **A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. Keep your themes in the built-in library and switch between them anytime. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.8.4).** Now supports **Open WebUI 0.11.0+**. New in this line: a **Theme Manager** — save up to 12 themes in a library, pick and apply any of them, all **persisted across Open WebUI restarts**; a **security update** (every state endpoint is admin-gated server-side, with token-revocation checks); and a full **UI/UX overhaul** of the `/skin` page. The conversion engine is proven; please report issues.
+> **Beta (v0.9.5).** Now supports **Open WebUI 0.11.0+**. New in this line: a **Theme Manager** — save up to 12 themes in a library, pick and apply any of them, all **persisted across Open WebUI restarts**; a **security update** (every state endpoint is admin-gated server-side, with token-revocation checks); a full **UI/UX overhaul** of the `/skin` page; and **full extraction fidelity** — every mode ships its own gradient (linear, radial, conic, mesh), custom CSS is scoped exactly the way TDP scopes it, and the theme's background shows through Open WebUI's panels (TDP's structural layer, ported from their generator). The conversion engine is proven; please report issues.
 
 ## Why I made this
 
@@ -13,6 +13,23 @@ Skin-Smith is made **with love for the Theme Designer Pro team's work**. Every l
 **🎨 Theme Designer Pro Studio → https://silentoplayz.github.io/theme-designer-pro-presets/studio/**
 
 Export the theme JSON, paste it into Skin-Smith, and your theme is live.
+
+## What Skin-Smith extracts
+
+From the TDP theme JSON, Skin-Smith emits, per mode (Dark / Light / OLED / Her), CSS scoped to Open WebUI's real mode classes — `.dark`, `.light`, `.her`, and the OLED inline true-black marker:
+
+- **Palette** — the mode's hue, chroma and lightness drive Open WebUI's whole gray scale (`--color-gray-50` … `--color-gray-950`). TDP's math, verbatim.
+- **Accent** — the mode's accent becomes `--tdp-accent` plus its two derived accents. Verbatim.
+- **Manual overrides** — the mode's `manualOverrides` block, verbatim.
+- **Custom CSS** — auto-scoped to the mode the way TDP scopes it: `:root` and `html` blocks are rewritten to the parent selector so they actually apply, `@keyframes` are hoisted out of the scoped block, and a theme with `autoScope: false` passes through raw.
+- **Gradient** — every mode gets **its own**: linear (angle), radial (shape, size, position), **conic** (`conic-gradient(from Xdeg, …)`), and mesh (points, spread, background) — intensity-adjusted stops, animation at the mode's own speed.
+- **Structural layer** — the body and sidebar base colours, and for gradient modes the clearing of Open WebUI's opaque panels so the gradient is visible: app shell, main, sidebar, message content, nav, sticky bars and background utilities, with the chat overlay and sidebar tinted with the gradient's base colour. The guard list keeps buttons, links, inputs, labels, spans and your own message bubble intact.
+- **OLED** — true-black palette overrides, scoped to Open WebUI's OLED marker; plain Dark never leaks true-black.
+
+In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
+
+- `--tdp-hue` / `--tdp-chroma` are emitted for TDP Canvas FX interop. Skin-Smith ships no canvas runtime, so they are inert.
+- Radii, blur, spacing, font size, transition and transparency sliders are TDP **designer UI valves** — they are not export fields. What they produce arrives as overrides, manual overrides or custom CSS, which are already emitted.
 
 ## Install
 
