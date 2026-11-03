@@ -3,6 +3,19 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.1 — 2026-11-03
+
+- **Custom CSS now scopes exactly as TDP does.** A theme whose custom CSS starts
+  with `:root` (the common case) used to ship **inert** CSS: wrapping it inside a
+  mode block compiles to `.dark :root` / `.dark html`, which never matches. TDP's
+  generator maps `:root` and `html` to `&` (the parent selector) and hoists
+  `@keyframes` out of the scoped block; `autoScope: false` emits the text raw
+  with `:root` rewritten to `:is(selector)`. All three paths are ported, so the
+  theme's variables and animation keyframes now apply.
+- Emission-only change: the converter math, the shared-asset registry block, the
+  page's element-ID contract, the admin gate, the persistence layer and the exact
+  success message are untouched.
+
 ## v0.8.4 — 2026-11-03
 
 - **Theme Manager** (new in the 0.8 line): up to 12 themes stored in the function
