@@ -36,6 +36,7 @@ Running Skin-Smith **and** Theme Designer Pro at the same time is redundant: bot
 ## Links
 
 - **GitHub repo:** https://github.com/xWaLeEdOoOx/skin-smith
+- **Releases (download `skin-smith.py` + changelog):** https://github.com/xWaLeEdOoOx/skin-smith/releases
 - **Open-WebUI Post:** https://openwebui.com/posts/c6c37581-8954-435a-9b3f-51504d368835
 
 *Skin-Smith: Made by Waleed Kh. Tolbah (AKA xWaLeEdOoOx), released with respect and gratitude to the Theme Designer Pro team.*
