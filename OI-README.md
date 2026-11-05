@@ -2,7 +2,9 @@
 
 **A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. Keep your themes in the built-in library and switch between them anytime. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
-> **Beta (v0.9.5).** Now supports **Open WebUI 0.11.0+**. New in this line: a **Theme Manager** — save up to 12 themes in a library, pick and apply any of them, all **persisted across Open WebUI restarts**; a **security update** (every state endpoint is admin-gated server-side, with token-revocation checks); a full **UI/UX overhaul** of the `/skin` page; and **full extraction fidelity** — every mode ships its own gradient (linear, radial, conic, mesh), custom CSS is scoped exactly the way TDP scopes it, and the theme's background shows through Open WebUI's panels (TDP's structural layer, ported from their generator). The conversion engine is proven; please report issues.
+> **v0.9.5 — your theme now looks the way the Studio preview looks.** Every mode — Dark, Light, OLED, Her — gets its own background. The gradient fills the page and Open WebUI's panels no longer hide it; the sidebar takes a matching tint, and your bubbles, highlights and accents all land in the theme's own colours. Your theme's custom CSS applies in the mode it belongs to, and all of it survives restarts. Same one small file, nothing new to install — update the function, **Apply & Save**.
+
+> **Beta (v0.8.4).** Now supports **Open WebUI 0.11.0+**. New in this line: a **Theme Manager** — save up to 12 themes in a library, pick and apply any of them, all **persisted across Open WebUI restarts**; a **security update** (every state endpoint is admin-gated server-side, with token-revocation checks); and a full **UI/UX overhaul** of the `/skin` page. The conversion engine is proven; please report issues.
 
 ## Why I made this
 
