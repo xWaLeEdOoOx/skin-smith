@@ -3,6 +3,75 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.5 — 2026-11-03
+
+- **Conic gradients are real `conic-gradient()`s.** The theme JSON admits the
+  `conic` gradient type; TDP's own generator emits
+  `conic-gradient(from Xdeg, stops)`. Skin-Smith fell conic through to
+  `linear-gradient`, so a conic theme shipped the wrong shape. The converter
+  now emits the real conic — same stops, same intensity math, angle default
+  135 — matching what TDP serves. The preview engine is untouched (TDP math
+  verbatim); the emitted CSS is now TDP-faithful for conic themes.
+
+## v0.9.4 — 2026-11-03
+
+- **`autoScope: false` verified end-to-end** (the raw pass-through TDP ships):
+  a theme that turns auto-scoping off emits its custom CSS **raw**, with
+  `:root` rewritten to `:is(selector)` and every other rule left exactly as
+  written — including an `html` block, which TDP's raw branch deliberately
+  does not rewrite (the user opted out of scoping). The path shipped with
+  v0.9.1; this version pins it with explicit assertions: raw text outside any
+  scope wrapper, `:root` → `:is(.her)`, `html` verbatim, and the scoped-mode
+  check that no bare `html` block survives the scoped transform.
+- No emission change: the converter math, the shared-asset registry block,
+  the page's element-ID contract, the admin gate, the persistence layer and
+  the exact success message are untouched.
+
+## v0.9.3 — 2026-11-03
+
+- **The gradient is now visible.** Open WebUI paints opaque panels
+  (`.app`, `main`, every `bg-gray-*` utility, message content, sticky bars,
+  the chat overlay) on top of the page, so a scoped gradient sat **hidden**
+  behind them. Skin-Smith now emits TDP's structural layer: the body and
+  sidebar base colour for every mode, and for modes with a gradient the full
+  transparency clear — `.app` cleared with `position: relative`, `main`,
+  `.app > div`, the `bg-gray-*` utilities (with TDP's guard list: buttons,
+  links, inputs, labels, spans and the user's own message bubble keep their
+  backgrounds), `.message-content`, `nav` and sticky bars — plus the gradient
+  section's own extras: Open WebUI's `body::before` removed, the chat overlay
+  and the sidebar tinted with the gradient's base colour (the darkest stop),
+  sidebar blur. TDP's designer/auth selectors are dropped (Skin-Smith has no
+  designer page).
+- Emission-only change: the converter math, the shared-asset registry block,
+  the page's element-ID contract, the admin gate, the persistence layer and
+  the exact success message are untouched.
+
+## v0.9.2 — 2026-11-03
+
+- **Every mode gets its own gradient.** The theme JSON carries a full gradient
+  per mode (type, angle, stops, intensity, animation, radial geometry, mesh
+  points), and the preview has always shown the active mode's. The emitted CSS
+  used to ship only the first enabled mode's gradient, on a bare `body` — so
+  Light, Her and OLED users saw the dark theme's background. Gradients are now
+  scoped to Open WebUI's real classes: `.dark body`, `.light body`, `.her body`,
+  and the OLED inline true-black marker (never `.dark`), emitted in dark →
+  light → oled → her order so `.her body` wins when `<html>` carries `.her` plus
+  `.light`. One shared `@keyframes` is emitted once. Pages with no mode class
+  keep Open WebUI's own background.
+
+## v0.9.1 — 2026-11-03
+
+- **Custom CSS now scopes exactly as TDP does.** A theme whose custom CSS starts
+  with `:root` (the common case) used to ship **inert** CSS: wrapping it inside a
+  mode block compiles to `.dark :root` / `.dark html`, which never matches. TDP's
+  generator maps `:root` and `html` to `&` (the parent selector) and hoists
+  `@keyframes` out of the scoped block; `autoScope: false` emits the text raw
+  with `:root` rewritten to `:is(selector)`. All three paths are ported, so the
+  theme's variables and animation keyframes now apply.
+- Emission-only change: the converter math, the shared-asset registry block, the
+  page's element-ID contract, the admin gate, the persistence layer and the exact
+  success message are untouched.
+
 ## v0.8.4 — 2026-11-03
 
 - **Theme Manager** (new in the 0.8 line): up to 12 themes stored in the function

@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.11.0
-version: 0.8.4
+version: 0.9.5
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -341,6 +341,12 @@ CONVERTER_SRC = r"""/* =========================================================
       const x = firstOf(g.radialPosX, g.gradientRadialPosX, 50);
       const y = firstOf(g.radialPosY, g.gradientRadialPosY, 50);
       fn = `radial-gradient(${shape} ${size} at ${x}% ${y}%, ${stopsStr})`;
+    } else if (type === 'conic') {
+      // TDP's own generator emits a real conic-gradient (buildGradientCss
+      // honours the conic enum with conic-gradient(from Xdeg, stops)), so the
+      // served CSS matches what TDP serves. Same stops, same intensity math.
+      const angle = firstOf(g.angle, g.gradientAngle, 135);
+      fn = `conic-gradient(from ${angle}deg, ${stopsStr})`;
     } else {
       const angle = firstOf(g.angle, g.gradientAngle, 135);
       fn = `linear-gradient(${angle}deg, ${stopsStr})`;
@@ -403,19 +409,157 @@ CONVERTER_SRC = r"""/* =========================================================
     return `${selector} {\n${lines.join('\n')}\n}`;
   }
 
-  // Gradient block, mirroring buildMockSrcdoc's gradient section
-  function gradientBlock(g) {
+  // TDP's structural transparency layer, ported from getBgRules
+  // (theme_designer_pro_event.py L11591-11635). A mode with a gradient must have
+  // Open WebUI's opaque panels cleared, or the scoped gradient stays hidden
+  // behind them. TDP's designer/auth selectors (#theme-designer-container,
+  // #auth-container, #auth-page, #auth-login-card, #owui-theme-bg-color) are
+  // dropped: Skin-Smith has no designer page and no canvas runtime, so they
+  // would be inert noise.
+  const BG_EX = ':not(button):not(a):not(input):not(select):not(label):not(span):not(.chat-user *)';
+  const BG_WHERE = ['[class^="bg-gray-"]', '[class*=" bg-gray-"]', '[class^="dark:bg-gray-"]', '[class*=" dark:bg-gray-"]']
+    .map((s) => s + BG_EX).join(', ');
+
+  function hasGradient(mode) {
+    return !!(mode.gradientEnabled && (
+      (mode.gradientType === 'mesh' && mode.gradientMeshPoints && mode.gradientMeshPoints.length >= 2) ||
+      (mode.gradientType !== 'mesh' && mode.gradientStops && mode.gradientStops.length >= 2)
+    ));
+  }
+
+  // TDP's getLuminance (Rec.601 perceptual estimate) and getDarkestStop: the
+  // gradient's base colour is the darkest stop, resolved to #rrggbb before
+  // reading it so rgb()/oklch()/#000 never win.
+  function luminance(hex) {
+    const h = String(hex || '').replace('#', '');
+    const m = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+    if (!/^[0-9a-fA-F]{6}$/.test(m)) return null;
+    return (0.299 * parseInt(m.slice(0, 2), 16) + 0.587 * parseInt(m.slice(2, 4), 16) + 0.114 * parseInt(m.slice(4, 6), 16)) / 255;
+  }
+
+  function darkestStop(stops) {
+    if (!Array.isArray(stops) || stops.length === 0) return '#000000';
+    let darkest = stops[0].color, min = Infinity;
+    stops.forEach((s) => {
+      const l = luminance(s.color);
+      if (l === null) return;
+      if (l < min) { min = l; darkest = s.color; }
+    });
+    return darkest;
+  }
+
+  // TDP's hexToRgba: non-hex colours have no channels to read (rgba(NaN,...) is
+  // dropped by the browser), so they mix through color-mix instead.
+  function hexToRgba(hex, alpha) {
+    const tok = String(hex || '#000000');
+    const h = tok.replace('#', '');
+    const m = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+    if (!/^[0-9a-fA-F]{6}$/.test(m)) return `color-mix(in srgb, ${tok} ${Math.round(alpha * 100)}%, transparent)`;
+    const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  // The gradient's base colour: the mesh background for mesh, the darkest stop
+  // otherwise (TDP passes exactly this to buildGradientStructuralCss).
+  function gradientBase(mode) {
+    if (mode.gradientType === 'mesh') return mode.gradientMeshBgColor || '#0a0a12';
+    return darkestStop(mode.gradientStops || []);
+  }
+
+  // TDP emits the body + sidebar base for EVERY mode (getBgRules' else branch),
+  // and the full transparency clear only for modes with a gradient. Sidebar
+  // comes last, as in TDP.
+  function structuralBlock(mode, selector) {
+    const lightSide = selector === '.light' || selector === '.her';
+    const bgBody = lightSide ? '--color-gray-50' : '--color-gray-900';
+    const bgSidebar = lightSide ? '--color-gray-50' : '--color-gray-950';
+    const lines = [`${selector} body { background-color: var(${bgBody}) !important; }`];
+    if (hasGradient(mode)) {
+      lines.push(
+        `${selector} .app { background-color: transparent !important; background-image: none !important; position: relative; }`,
+        `${selector} .app > div, ${selector} main { background-color: transparent !important; background-image: none !important; }`,
+        `${selector} .app :where(${BG_WHERE}) { background-color: transparent !important; background-image: none !important; }`,
+        `${selector} .app :where(.message-content) { background-color: transparent !important; }`,
+        `${selector} .app :where(nav, .sticky:not([class*="bg-black"]), [class*="bg-gradient"], [class*="bg-linear-to"]) { background-color: transparent !important; background-image: none !important; }`,
+      );
+    }
+    lines.push(`${selector} #sidebar { background-color: var(${bgSidebar}) !important; }`);
+    return lines.join('\n');
+  }
+
+  // Gradient block, mirroring buildMockSrcdoc's gradient section, scoped to the
+  // mode's real selector. Open WebUI puts the mode class on <html>, so the
+  // gradient rides `.dark body` / `.light body` / `.her body`, and OLED rides the
+  // inline true-black marker — never `.dark` (the same anti-leak rule as the
+  // OLED vars block). Keyframes are NOT emitted here: one shared set is emitted
+  // after all mode blocks.
+  const GRADIENT_KEYFRAMES = '@keyframes tdp-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }';
+
+  function gradientBlock(g, selector) {
     const layers = gradientLayers(g);
-    if (!layers) return '';
+    if (!layers) return null;
     const bg = layers.background ? `background-color: ${layers.background} !important;` : '';
     const anim = layers.animated
       ? `background-size: 300% 300% !important; animation: tdp-gradient-shift ${layers.speed}s ease infinite;`
       : '';
-    let css = `body { ${bg} background-image: ${layers.backgroundImage} !important; background-attachment: fixed !important; ${anim} }`;
-    if (layers.animated) {
-      css += `\n@keyframes tdp-gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`;
+    // TDP's gradient section also removes Open WebUI's own body::before, tints
+    // the chat overlay with the base colour, and tints the sidebar with it.
+    const base = gradientBase(g);
+    const extras = [
+      `${selector} body::before { content: none !important; display: none !important; }`,
+      `${selector} #chat-container .bg-linear-to-t { background-image: linear-gradient(to top, ${hexToRgba(base, 0.7)}, ${hexToRgba(base, 0.35)}) !important; }`,
+      `${selector} #sidebar { background-color: ${hexToRgba(base, 0.75)} !important; backdrop-filter: blur(12px) !important; }`,
+    ].join('\n');
+    return {
+      css: `${selector} body { ${bg} background-image: ${layers.backgroundImage} !important; background-attachment: fixed !important; ${anim} }\n${extras}`,
+      animated: layers.animated,
+    };
+  }
+
+  // @keyframes hoisting, ported from TDP's extractKeyframes
+  // (theme_designer_pro_event.py L11376). A @keyframes block nested inside a
+  // scoped rule is not CSS, so it moves out of the block. Comments and strings
+  // are blanked to spaces first (same length, indices line up): a brace or
+  // @keyframes inside a comment is not CSS. An unbalanced block stays put.
+  function extractKeyframes(css) {
+    let keyframes = '';
+    let cleaned = css;
+    let shadow = css.replace(/\/\*[\s\S]*?(?:\*\/|$)|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, (m) => ' '.repeat(m.length));
+    let from = 0;
+    let start = shadow.indexOf('@keyframes', from);
+    while (start !== -1) {
+      let open = 0, i = start, started = false, end = -1;
+      while (i < shadow.length) {
+        if (shadow[i] === '{') { open++; started = true; }
+        else if (shadow[i] === '}') { open--; }
+        i++;
+        if (started && open === 0) { end = i; break; }
+      }
+      if (end === -1) break;
+      keyframes += cleaned.substring(start, end) + '\n';
+      cleaned = cleaned.substring(0, start) + cleaned.substring(end);
+      shadow = shadow.substring(0, start) + shadow.substring(end);
+      from = start;
+      start = shadow.indexOf('@keyframes', from);
     }
-    return css;
+    return { keyframes, cleanedCss: cleaned };
+  }
+
+  // Custom CSS block, mirroring TDP's buildCustomCss
+  // (theme_designer_pro_event.py L11585-11600). A nested :root / html inside a
+  // scoped block compiles to ".dark :root" / ".dark html", which never matches,
+  // so TDP turns them into & (the parent selector) and hoists @keyframes out.
+  // autoScope false = raw pass-through, :root rewritten to :is(selector).
+  function customBlock(mode, k, selector) {
+    if (!mode.customCssEnabled || typeof mode.customCSS !== 'string' || !mode.customCSS.trim()) return '';
+    const cssText = mode.customCSS.trim();
+    const header = `/* Custom CSS (${k}) */`;
+    if (mode.autoScope === false) {
+      return `${header}\n${cssText.replace(/:root/gi, ':is(' + selector + ')')}`;
+    }
+    const kf = extractKeyframes(cssText);
+    const scoped = kf.cleanedCss.replace(/:root/gi, '&').replace(/(^|[\s,{};(])html(?=[\s.,:\[#{>+~)]|$)/gi, '$1&');
+    return `${header}\n${selector} {\n${scoped}\n}\n${kf.keyframes}`;
   }
 
   // Full convert: theme JSON object -> one CSS string for Settings -> Interface -> Custom CSS
@@ -439,28 +583,46 @@ CONVERTER_SRC = r"""/* =========================================================
       parts.push(varsBlock(SELECTORS[k], vars));
     });
 
-    // Gradient: the theme's gradient config, emitted once on body.
-    // A mode's gradient* fields count when gradientEnabled is set; the first
-    // enabled mode wins (dark first, as the designer applies it).
-    let grad = null;
-    for (const k of MODES) {
-      const mode = readMode(theme, k);
-      if (mode.gradientEnabled) { grad = gradientBlock(mode); break; }
-    }
-    if (grad) {
+    // Structural layer, ported from TDP's getBgRules: the body + sidebar base
+    // for every mode, plus the panel-transparency clear for gradient modes.
+    // Emitted between the vars and the gradient, as TDP assembles them
+    // (vars + structural + gradient + custom).
+    const structural = [];
+    MODES.forEach((k) => {
+      structural.push(structuralBlock(readMode(theme, k), SELECTORS[k]));
+    });
+    parts.push('');
+    parts.push('/* Structural layer */');
+    parts.push(structural.join('\n'));
+
+    // Gradient: every enabled mode gets its OWN gradient, scoped to Open WebUI's
+    // real classes — exactly what the preview shows per mode (studio.js
+    // previewOpts() calls gradientLayers(mode) for each mode; the designer applies
+    // the active mode's). Emit in dark -> light -> oled -> her order so
+    // `.her body` wins when <html> carries .her plus .light (the
+    // her-after-settings quirk), and OLED rides the style-attribute selector.
+    // One shared @keyframes, emitted once. No bare body rule: pages with no mode
+    // class keep Open WebUI's own background.
+    const grads = [];
+    let animated = false;
+    MODES.forEach((k) => {
+      const block = gradientBlock(readMode(theme, k), SELECTORS[k]);
+      if (block) {
+        grads.push(block.css);
+        if (block.animated) animated = true;
+      }
+    });
+    if (grads.length) {
       parts.push('');
       parts.push('/* Gradient background */');
-      parts.push(grad);
+      parts.push(grads.join('\n'));
+      if (animated) parts.push(GRADIENT_KEYFRAMES);
     }
 
-    // Custom CSS: each mode's block, scoped to its selector, passed through as-is
+    // Custom CSS: each mode's block, scoped exactly as TDP's buildCustomCss
     MODES.forEach((k) => {
-      const mode = readMode(theme, k);
-      if (mode.customCssEnabled && typeof mode.customCSS === 'string' && mode.customCSS.trim()) {
-        parts.push('');
-        parts.push(`/* Custom CSS (${k}) */`);
-        parts.push(`${SELECTORS[k]} {\n${mode.customCSS.trim()}\n}`);
-      }
+      const block = customBlock(readMode(theme, k), k, SELECTORS[k]);
+      if (block) { parts.push(''); parts.push(block); }
     });
 
     return parts.join('\n');
