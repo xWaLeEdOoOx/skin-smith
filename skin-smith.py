@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.11.0
-version: 0.9.5
+version: 0.9.8
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -310,6 +310,88 @@ CONVERTER_SRC = r"""/* =========================================================
     for (const v of arguments) if (v != null) return v;
   }
 
+  // ---- Clamps, ported from TDP's generator (theme_designer_pro_event.py
+  // L9085-9121) ---- Out-of-range or wrong-typed values fall back to the
+  // default rather than being dropped, so a partially malformed theme still
+  // loads. Applied in readMode to PRESENT keys only, so Skin-Smith's own mode
+  // fallbacks (missing oled = dark with l=0, missing her = light) stay exactly
+  // as they are. Studio.js exports are already clamped by TDP's designer;
+  // these clamps are for theme JSON that did not come through it.
+  const _MODE_NUM_BOUNDS = {
+    h: [0, 360], c: [0, 150], l: [0, 100],
+    gradientAngle: [0, 360], gradientIntensity: [0, 100],
+    gradientRadialPosX: [0, 100], gradientRadialPosY: [0, 100],
+    // TDP's note: matches the sl-gradient-speed slider (min 2). Zero is not a
+    // valid duration here: animation 0s with background-size 300% freezes a
+    // 3x-zoomed gradient instead of animating it.
+    gradientAnimationSpeed: [2, 30]
+  };
+  const _MODE_ENUMS = {
+    gradientType: ['linear', 'radial', 'conic', 'mesh'],
+    gradientRadialShape: ['circle', 'ellipse'],
+    gradientRadialSize: ['closest-side', 'closest-corner', 'farthest-side', 'farthest-corner']
+  };
+  // TDP's DEFAULT_MODE_DATA, restricted to the fields Skin-Smith consumes
+  const _MODE_DEFAULTS = {
+    h: 250, c: 0, l: 20, gradientType: 'linear', gradientAngle: 135,
+    gradientIntensity: 85, gradientRadialPosX: 50, gradientRadialPosY: 50,
+    gradientRadialShape: 'ellipse', gradientRadialSize: 'farthest-corner',
+    gradientAnimationSpeed: 8, gradientMeshBgColor: '#0a0a12'
+  };
+
+  // TDP's _toFiniteNumber: Number(null) is 0 and Number('') is 0, and
+  // isFinite(0) is true, so a plain Number() guard silently turns "unset" into
+  // zero — TDP's recorded bug is a theme serialized with nulls becoming 0deg
+  // angle and intensity 0, flattening every gradient stop to grey. Only real
+  // numbers and numeric strings count; everything else takes the fallback.
+  function toFiniteNumber(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = Number(v);
+      return isFinite(n) ? n : null;
+    }
+    return null; // null, undefined, '', boolean, array, object
+  }
+
+  function num(v, lo, hi, dflt) {
+    const n = toFiniteNumber(v);
+    if (n === null) return dflt;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  function parensBalanced(s) {
+    let depth = 0;
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') { depth--; if (depth < 0) return false; }
+    }
+    return depth === 0;
+  }
+
+  // TDP's _cssTok: only strings and finite numbers are colour-shaped. Coercing
+  // anything else produced literals like "false"/"0"/"[object Object]" that
+  // pass the charset and get emitted as a CSS value. A whitespace-only value is
+  // a legal EMPTY custom-property value, which makes every var() reading it
+  // resolve to unset and strips colour from the UI for every user.
+  function cssTok(v, fallback) {
+    const t = typeof v;
+    if (!(t === 'string' || (t === 'number' && isFinite(v)))) return fallback;
+    const s = String(v);
+    const ok = s.length <= 64 && /\S/.test(s) && /^[\w#(),.%\s/-]+$/.test(s)
+      && !/url\s*\(/i.test(s) && !/image-set\s*\(/i.test(s) && parensBalanced(s);
+    return ok ? s : fallback;
+  }
+
+  // Skin-Smith also accepts the raw preset-file aliases gradientLayers reads
+  // (type / intensity / angle / speed / radialShape / ...). They go through the
+  // same bounds, so an alias cannot smuggle an invalid value past the clamps.
+  const _ALIAS_OF = {
+    type: 'gradientType', intensity: 'gradientIntensity', angle: 'gradientAngle',
+    speed: 'gradientAnimationSpeed', radialShape: 'gradientRadialShape',
+    radialSize: 'gradientRadialSize', radialPosX: 'gradientRadialPosX',
+    radialPosY: 'gradientRadialPosY', meshBgColor: 'gradientMeshBgColor'
+  };
+
   // Accepts a full gradient preset object (raw file) or a theme mode's gradient* fields
   function gradientLayers(g) {
     const type = g.type || g.gradientType || 'linear';
@@ -372,6 +454,41 @@ CONVERTER_SRC = r"""/* =========================================================
     // An accent is '#rrggbb', stored lowercase, or '' for the generated one
     ['accent', 'accent2', 'accent3'].forEach((f) => {
       m[f] = typeof m[f] === 'string' && /^#[0-9a-fA-F]{6}$/.test(m[f]) ? m[f].toLowerCase() : '';
+    });
+    // TDP's validateModeData, in its order, over the fields Skin-Smith consumes.
+    // Present keys only: an absent field keeps Skin-Smith's own default path.
+    Object.keys(_MODE_NUM_BOUNDS).forEach((k) => {
+      if (m[k] === undefined) return;
+      const [lo, hi] = _MODE_NUM_BOUNDS[k];
+      m[k] = num(m[k], lo, hi, _MODE_DEFAULTS[k]);
+    });
+    Object.keys(_MODE_ENUMS).forEach((k) => {
+      if (m[k] === undefined) return;
+      if (!_MODE_ENUMS[k].includes(m[k])) m[k] = _MODE_DEFAULTS[k];
+    });
+    ['paletteEnabled', 'customCssEnabled', 'autoScope', 'manualOverridesEnabled',
+     'gradientEnabled', 'gradientAnimation'].forEach((k) => {
+      if (m[k] !== undefined) m[k] = !!m[k];
+    });
+    // The free-form CSS fields must be strings; the colour-valued ones are
+    // constrained to the CSS colour grammar (cssTok), as TDP constrains them.
+    ['customCSS', 'manualOverrides'].forEach((k) => {
+      if (m[k] !== undefined && typeof m[k] !== 'string') m[k] = '';
+    });
+    if (m.gradientMeshBgColor !== undefined) {
+      m.gradientMeshBgColor = cssTok(m.gradientMeshBgColor, _MODE_DEFAULTS.gradientMeshBgColor);
+    }
+    Object.keys(_ALIAS_OF).forEach((a) => {
+      if (m[a] === undefined) return;
+      const canon = _ALIAS_OF[a];
+      if (_MODE_NUM_BOUNDS[canon]) {
+        const [lo, hi] = _MODE_NUM_BOUNDS[canon];
+        m[a] = num(m[a], lo, hi, _MODE_DEFAULTS[canon]);
+      } else if (_MODE_ENUMS[canon]) {
+        if (!_MODE_ENUMS[canon].includes(m[a])) m[a] = _MODE_DEFAULTS[canon];
+      } else {
+        m[a] = cssTok(m[a], _MODE_DEFAULTS[canon]);
+      }
     });
     return m;
   }
