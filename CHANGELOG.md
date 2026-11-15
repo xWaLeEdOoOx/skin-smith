@@ -3,6 +3,22 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.10.1 — 2026-11-15
+
+- **Export JSON.** With a saved slot selected in the library, **Export JSON**
+  downloads the slot's stored theme JSON as `<slot name>.json` — the theme
+  source itself, every field, byte-for-byte. The slot name is sanitized for
+  filename safety (`\ / : * ? " < > |` → `_`). Purely client-side: no new route,
+  no gate, no persistence change. A slot stores its JSON at **Save as new** /
+  **Update slot**, and **Upload JSON** already reads a `.json` back into the
+  editor, so the loop closes: slot → `.json` file → editor → slot. **Proven on
+  the real export fixture: upload → slot → export is byte-identical** (405,244
+  chars).
+- **The non-admin load never crashes.** The applied-chip writer guards a missing
+  `#applied` (the client gate swaps the body before the 403 slots-fetch catch
+  runs), so a non-admin load shows zero page errors; the server's 403 on a
+  non-admin slots fetch is the gate working as designed.
+
 ## v0.9.9 — 2026-11-05
 
 - **User text cannot carry the `SKINSMITH-START` / `SKINSMITH-END` markers**
