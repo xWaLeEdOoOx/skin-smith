@@ -3,6 +3,59 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.9.9 — 2026-11-05
+
+- **User text cannot carry the `SKINSMITH-START` / `SKINSMITH-END` markers**
+  (B6). The served `/static/custom.css` is wrapped in those markers, and the
+  shared-asset registry composes every loader's block **by the markers** — so a
+  theme whose custom CSS, manual overrides, palette overrides or name contains a
+  marker string would close the injected block early, letting the rest of it
+  escape the wrapper and collide with another loader's block. Any `SKINSMITH-`
+  in user-supplied text is neutralized to `SKINSMITH_` before it enters the CSS:
+  not a marker, legal inside a CSS comment, an identifier and a custom-property
+  value, and the user's own rules survive intact. Comment delimiters in the
+  theme **name** are stripped too, so a name can't close the header comment
+  early.
+- Converter-side sanitization only: the shared-asset registry block stays
+  byte-identical to TDP, the converter math is verbatim, the preview engine is
+  untouched, and the page's element-ID contract, the admin gate, the persistence
+  layer and the exact success message are untouched. **Proven against the user's
+  real everyday export: the emitted CSS is byte-identical** (`80e1973e5b044a95`,
+  14771 chars) — a theme without markers converts exactly as before.
+
+## v0.9.8 — 2026-11-05
+
+- **The converter clamps theme values the way TDP clamps them** (ported from the
+  generator's `_MODE_NUM_BOUNDS` / `_num` / `_toFiniteNumber` / `_cssTok`,
+  `theme_designer_pro_event.py` L9085–9121). A theme JSON that never passed
+  through TDP's designer used to reach the CSS as written: a non-numeric
+  `gradientAngle` emitted `linear-gradient(abcdeg, …)` (invalid CSS), an
+  out-of-range `h` / `c` / `l` / intensity / radial position / speed emitted its
+  own value, a junk `gradientType` / `gradientRadialShape` / `gradientRadialSize`
+  fell through, a `url()` mesh background landed in the CSS, and non-string
+  `customCSS` / `manualOverrides` were coerced into `[object Object]`. Every
+  present field now takes **TDP's default** when it is out of range or the wrong
+  type — bounds `h [0,360]`, `c [0,150]`, `l [0,100]`, `gradientAngle [0,360]`,
+  `gradientIntensity [0,100]`, `gradientRadialPosX/Y [0,100]`,
+  `gradientAnimationSpeed [2,30]` (TDP's note: speed 0 freezes a 3×-zoomed
+  gradient instead of animating it), enums `linear|radial|conic|mesh`,
+  `circle|ellipse`, and the four radial sizes. TDP's `_toFiniteNumber` rule is
+  kept: `null` and `''` are **unset**, never zero — TDP's recorded bug is a theme
+  serialized with nulls becoming 0deg angle and intensity 0, flattening every
+  gradient stop to grey. The raw preset-file aliases (`type` / `angle` /
+  `intensity` / `speed` / `radialShape` / …) go through the same bounds, so an
+  alias cannot smuggle an invalid value past.
+- **Only present keys are touched**, so Skin-Smith's own mode fallbacks (missing
+  `oled` = dark with `l=0`, missing `her` = light, `manualOverrides` text without
+  `manualOverridesEnabled` = enabled, accent not `#rrggbb` = generated) stay
+  exactly as they are. **Proven against the user's real everyday export: the
+  emitted CSS is byte-identical before and after** (`80e1973e5b044a95`, 14771
+  chars) — studio.js exports are already clamped by TDP's designer, so this pass
+  is a no-op for them.
+- Converter-only: the preview engine is verbatim, and the converter math, the
+  shared-asset registry block, the page's element-ID contract, the admin gate,
+  the persistence layer and the exact success message are untouched.
+
 ## v0.9.5 — 2026-11-03
 
 - **Conic gradients are real `conic-gradient()`s.** The theme JSON admits the
