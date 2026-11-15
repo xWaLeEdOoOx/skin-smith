@@ -3,7 +3,7 @@
 
 ## Skin-Smith
 
-**A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON and Skin-Smith converts that theme into Open WebUI Custom CSS — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. Keep your themes in the built-in library and switch between them anytime. No server, no frameworks, no runtime — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
+**A lightweight skin engine for Open WebUI.** Feed it any [Theme Designer Pro](https://github.com/silentoplayz/theme-designer-pro-presets) theme JSON, and Skin-Smith reproduces the Studio's full result as Open WebUI Custom CSS: the theme's palette, accents, manual overrides, its gradient in every mode, the structural layer that lets Open WebUI's panels show the theme through, and its custom CSS scoped to the mode it belongs to — applied cleanly for every user, persisted across restarts, from a single readable, self-contained function file. Keep your themes in the built-in library and switch between them anytime. **Pure CSS — no server, no frameworks, no runtime** — and **no theme baked into the file**: the themes come from TDP's JSON, a source many of us already know and love.
 
 > **v0.9.5 — your theme now feels the way the Studio preview feels.** Every mode — Dark, Light, OLED, Her — gets its own background. The gradient fills the page and Open WebUI's panels no longer hide it; the sidebar takes a matching tint, and your bubbles, highlights and accents all land in the theme's own colours. Your theme's custom CSS applies in the mode it belongs to, and all of it survives restarts. Same one small file, nothing new to install — update the function, **Apply & Save**.
 
@@ -12,9 +12,9 @@
 ## What it is
 
 - **One file, one function.** `skin-smith.py` is the entire extension: a self-contained Open WebUI Event-function loader. It is identical for every theme — no CSS embedded, no valve, no logging.
-- **An engine, not a theme pack.** Skin-Smith takes what TDP produces from a theme JSON (palette, accents, manual overrides, gradient, custom CSS) and loads it as Open WebUI Custom CSS — that's all it does. Skin-Smith is the engine; TDP is the paint.
+- **An engine, not a theme pack.** Skin-Smith is the Theme Designer Pro generator reproduced in one file: palette, accents, manual overrides, per-mode gradients, the structural layer, tints, and custom CSS — made from the theme JSON and loaded as Open WebUI Custom CSS, applied to every user. Skin-Smith is the engine; TDP is the paint.
 - **A theme manager on top of the engine.** A 12-slot library lives in the function meta: save, name, switch, update, delete — and the library **and** the applied theme survive Open WebUI restarts. Themes still come from TDP's JSON, never baked into the file.
-- **Every line of palette, accent, and gradient math is ported verbatim** from the Theme Designer Pro team's official code, with respect and gratitude to them. We ship no CSS library of our own — the one exception is an Indigo sample draft that lights up the preview generator.
+- **Everything comes from the masters.** Skin-Smith ships no CSS library of its own: the palette, accent, gradient, structural and scoping rules all come from the Theme Designer Pro team's official generator code, ported verbatim, with respect and gratitude to them. The one exception is an Indigo sample draft that lights up the preview generator.
 
 ## What Skin-Smith extracts
 
@@ -37,6 +37,7 @@ In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
 
 - Not a full TDP extension. TDP's runtime (SSE, Web Workers, Canvas FX, fonts, scripts) is deliberately **not** replicated — Skin-Smith delivers the CSS result.
 - Not a theme collection. Make your theme in the [TDP Studio](https://silentoplayz.github.io/theme-designer-pro-presets/studio/), export the JSON, and Skin-Smith brings it to life.
+- The previewer on the `/skin` page is TDP's own previewer, so the preview shows a bit more than the final CSS. The skin that ships is pure CSS: what **Apply & Save** serves is exactly the CSS Skin-Smith emits.
 
 **🎨 Theme Designer Pro Studio → https://silentoplayz.github.io/theme-designer-pro-presets/studio/**
 
