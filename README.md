@@ -14,6 +14,7 @@
 - **One file, one function.** `skin-smith.py` is the entire extension: a self-contained Open WebUI Event-function loader. It is identical for every theme — no CSS embedded, no valve, no logging.
 - **An engine, not a theme pack.** Skin-Smith is the Theme Designer Pro generator reproduced in one file: palette, accents, manual overrides, per-mode gradients, the structural layer, tints, and custom CSS — made from the theme JSON and loaded as Open WebUI Custom CSS, applied to every user. Skin-Smith is the engine; TDP is the paint.
 - **A theme manager on top of the engine.** A 12-slot library lives in the function meta: save, name, switch, update, delete — and the library **and** the applied theme survive Open WebUI restarts. Themes still come from TDP's JSON, never baked into the file.
+- **Exporting the theme source.** Pick a saved slot and press **Export JSON** — Skin-Smith downloads the slot's theme JSON as `<slot name>.json`, every field as it came out of the Studio, yours to keep, share, and upload back into Skin-Smith. Themes come from TDP's JSON and leave Skin-Smith in the same format they came in.
 - **Everything comes from the masters.** Skin-Smith ships no CSS library of its own: the palette, accent, gradient, structural and scoping rules all come from the Theme Designer Pro team's official generator code, ported verbatim, with respect and gratitude to them. The one exception is an Indigo sample draft that lights up the preview generator.
 
 ## What Skin-Smith extracts
@@ -65,7 +66,7 @@ In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
 
 1. Make your theme in the [TDP Studio](https://silentoplayz.github.io/theme-designer-pro-presets/studio/) and export its JSON.
 2. Sign in as an **admin** and open `http://<open-webui host>/skin`.
-3. **Theme Manager:** name the theme and hit **Save as new** — it lands in the library (up to 12). Pick any saved theme from the dropdown to load it back, **Update slot** to overwrite, **Delete slot** to remove. The library **and** the applied theme are persisted across Open WebUI restarts.
+3. **Theme Manager:** name the theme and hit **Save as new** — it lands in the library (up to 12). Pick any saved theme from the dropdown to load it back, **Update slot** to overwrite, **Delete slot** to remove. The library **and** the applied theme are persisted across Open WebUI restarts. With a saved slot selected, **Export JSON** downloads `<slot name>.json` — the theme source the slot stores, every field, and **Upload JSON** reads a `.json` back into the editor.
 4. Paste/upload the JSON (or hit **Load sample**), switch Dark / Light / OLED / Her to preview it live.
 5. **Apply & Save** — the CSS is served as `/static/custom.css` for all users, persisted across restarts (function meta, with a direct DB fallback for builds where the functions model module is broken). Requires an **admin session**. **Restore default** clears it back to Open WebUI's own default.
 
