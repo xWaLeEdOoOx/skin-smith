@@ -3,7 +3,7 @@ title: Skin-Smith
 author: Waleed Kh. Tolbah (AKA xWaLeEdOoOx)
 description: a lightweight Open WebUI plugin that extracts TDP theme CSS and loads it as custom CSS.
 required_open_webui_version: 0.11.0
-version: 0.10.1
+version: 0.11.0
 """
 
 # Portions of this file (the converter math, preview engine, and shared
@@ -545,6 +545,36 @@ CONVERTER_SRC = r"""/* =========================================================
     return `${selector} {\n${lines.join('\n')}\n}`;
   }
 
+  // The visualization contract, Skin-Smith's side (Open WebUI v0.13.4+).
+  // Model-made visualizations render in an OPAQUE iframe (VisualizationToolCall
+  // .svelte mounts <iframe srcdoc sandbox="allow-scripts">), and the frame's own
+  // HTML bakes six neutral-zinc custom properties in its <style> (frame.ts). CSS
+  // cannot cross an iframe boundary, so a theme reaches the frame only when the
+  // page defines these vars (this block) AND Open WebUI reads them from the page
+  // and forwards them over the frame's MessagePort (the other half, in
+  // VisualizationToolCall.svelte context() + runtime.ts contextChanged()).
+  // Inside the frame, Chart.js reads --owui-muted / --owui-border from the
+  // frame's computed style, so forwarded values recolour charts as well.
+  // Steps are the mode's own palette, chosen to match Open WebUI's conventions:
+  // the structural body base is the background, one step up is the card surface,
+  // then the mode's text, secondary text and border steps. Every value is a var()
+  // reference, so manual overrides, OLED's true-black and the theme's accent flow
+  // through unchanged. Emitted as its own labelled section, so each TDP-emitted
+  // mode block stays byte-identical.
+  const OWUI_CONTRACT = {
+    dark: [['--owui-background', '--color-gray-900'], ['--owui-surface', '--color-gray-800'], ['--owui-text', '--color-gray-50'], ['--owui-muted', '--color-gray-400'], ['--owui-border', '--color-gray-700'], ['--owui-accent', '--tdp-accent']],
+    light: [['--owui-background', '--color-gray-50'], ['--owui-surface', '--color-gray-100'], ['--owui-text', '--color-gray-700'], ['--owui-muted', '--color-gray-500'], ['--owui-border', '--color-gray-200'], ['--owui-accent', '--tdp-accent']],
+  };
+
+  // dark-side modes (dark, oled) take the dark mapping, light-side (light, her)
+  // the light one — the same split structuralBlock uses for the body base.
+  function owuiVars(modeKey) {
+    const map = modeKey === 'light' || modeKey === 'her' ? OWUI_CONTRACT.light : OWUI_CONTRACT.dark;
+    const vars = {};
+    map.forEach(([name, src]) => { vars[name] = `var(${src})`; });
+    return vars;
+  }
+
   // TDP's structural transparency layer, ported from getBgRules
   // (theme_designer_pro_event.py L11591-11635). A mode with a gradient must have
   // Open WebUI's opaque panels cleared, or the scoped gradient stays hidden
@@ -722,6 +752,15 @@ CONVERTER_SRC = r"""/* =========================================================
       parts.push(varsBlock(SELECTORS[k], vars));
     });
 
+    // The visualization contract, in its own labelled section: the six --owui-*
+    // vars Open WebUI's visualization frame contract reads, per mode. Keeping it
+    // separate leaves every TDP-emitted mode block byte-identical.
+    parts.push('');
+    parts.push('/* Visualization contract (--owui-*) */');
+    MODES.forEach((k) => {
+      parts.push(varsBlock(SELECTORS[k], owuiVars(k)));
+    });
+
     // Structural layer, ported from TDP's getBgRules: the body + sidebar base
     // for every mode, plus the panel-transparency clear for gradient modes.
     // Emitted between the vars and the gradient, as TDP assembles them
@@ -772,6 +811,7 @@ CONVERTER_SRC = r"""/* =========================================================
     const mode = readMode(theme, modeKey);
     const vars = themeVars(mode, modeKey);
     if (modeKey === 'oled') Object.assign(vars, OLED_OVERRIDE);
+    Object.assign(vars, owuiVars(modeKey));
     const gradient = mode.gradientEnabled ? gradientLayers(mode) : null;
     const customCSS = mode.customCssEnabled && typeof mode.customCSS === 'string' ? mode.customCSS : '';
     return { modeKey, vars, customCSS, gradient, transparent: false };
@@ -782,6 +822,7 @@ CONVERTER_SRC = r"""/* =========================================================
     themeVars, adjustHexIntensity, gradientLayers, accentColor,
     readMode, convert, previewFeed,
     SELECTORS, OLED_OVERRIDE, gradientBlock,
+    OWUI_CONTRACT, owuiVars,
   };
 })();
 

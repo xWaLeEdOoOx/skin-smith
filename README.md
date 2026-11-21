@@ -28,6 +28,7 @@ From the TDP theme JSON, Skin-Smith emits, per mode (Dark / Light / OLED / Her),
 - **Gradient** — every mode gets **its own**: linear (angle), radial (shape, size, position), **conic** (`conic-gradient(from Xdeg, …)`), and mesh (points, spread, background) — intensity-adjusted stops, animation at the mode's own speed.
 - **Structural layer** — the body and sidebar base colours, and for gradient modes the clearing of Open WebUI's opaque panels so the gradient is visible: app shell, main, sidebar, message content, nav, sticky bars and background utilities, with the chat overlay and sidebar tinted with the gradient's base colour. The guard list keeps buttons, links, inputs, labels, spans and your own message bubble intact.
 - **OLED** — true-black palette overrides, scoped to Open WebUI's OLED marker; plain Dark never leaks true-black.
+- **Visualization contract** — the six variables Open WebUI's Visualizations contract uses (`--owui-background`, `--owui-surface`, `--owui-text`, `--owui-muted`, `--owui-border`, `--owui-accent`) are emitted per mode, taken from the mode's own palette, with `--owui-accent` from the theme's accent. A feature that reads the page's contract inherits the skin.
 
 In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
 
@@ -38,6 +39,7 @@ In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
 
 - Not a full TDP extension. TDP's runtime (SSE, Web Workers, Canvas FX, fonts, scripts) is deliberately **not** replicated — Skin-Smith delivers the CSS result.
 - Not a theme collection. Make your theme in the [TDP Studio](https://silentoplayz.github.io/theme-designer-pro-presets/studio/), export the JSON, and Skin-Smith brings it to life.
+- Open WebUI's Visualizations frame (0.13.4+) renders in an opaque `srcdoc` iframe whose colours are baked into the frame's own HTML, and the context it receives carries no colours. A page's `--owui-*` values reach the frame only when Open WebUI forwards them: Skin-Smith publishes the contract per mode, and the forwarding patch (twelve lines in `context()` + `contextChanged()`) is prepared.
 - The previewer on the `/skin` page is TDP's own previewer, so the preview shows a bit more than the final CSS. The skin that ships is pure CSS: what **Apply & Save** serves is exactly the CSS Skin-Smith emits.
 
 **🎨 Theme Designer Pro Studio → https://silentoplayz.github.io/theme-designer-pro-presets/studio/**
