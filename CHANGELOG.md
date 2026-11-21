@@ -3,6 +3,43 @@
 All notable changes to Skin-Smith, newest first. The version number lives in the
 function docstring of `skin-smith.py` (`version:`).
 
+## v0.11.0 — 2026-11-21
+
+- **The visualization contract, per mode.** Open WebUI's Visualizations contract
+  (0.13.4+) names six custom properties a rendered fragment reads for all its
+  colours: `--owui-background`, `--owui-surface`, `--owui-text`, `--owui-muted`,
+  `--owui-border`, `--owui-accent`. Skin-Smith emits all six **per mode**, scoped
+  to `.dark` / `.light` / `.her` / the OLED marker like everything else, with the
+  same `!important` technique: background and surface are the mode's body base and
+  one step up, text/muted/border are the mode's text, secondary-text and border
+  steps, and `--owui-accent` is the theme's accent. Every value is a `var()`
+  reference into the mode's own palette, so manual overrides, OLED's true-black and
+  the theme's accent all flow through. A feature that reads the page's contract
+  inherits the skin.
+- **The frame boundary, measured.** Open WebUI renders the fragment in an opaque
+  `srcdoc` iframe (`sandbox="allow-scripts"`), and the frame's HTML bakes its own
+  neutral-zinc defaults. CSS cannot cross an iframe boundary, and the context the
+  parent forwards carries five fields — `theme`, `textScale`, `language`,
+  `direction`, `reducedMotion` — **no colours**. So emitting the contract is Skin-Smith's
+  half; the frame inherits the skin when Open WebUI forwards the page's values. The
+  forwarding patch is twelve lines: `context()` reads the six vars from
+  `getComputedStyle(document.documentElement)` (the mode class is on `<html>`, so
+  the active mode resolves for free) and puts them in the existing `context`
+  payload, and `runtime.ts` `contextChanged()` applies them on the frame's `<html>`.
+  Measured in the browser: a frame with Open WebUI's own styles goes from its baked
+  `#fff / #f5f5f5 / #171717 / #737373 / #e5e5e5 / #2563eb` to the theme —
+  background `oklch(0.120 0.040 220)`, surface `0.240`, text `0.900`, accent
+  `#ff8b80` — with the frame's own `color` computing to the theme's text.
+- **Nothing else moves.** The contract section is emitted as its own labelled
+  block, so **every TDP-emitted byte of the converted CSS is unchanged** (proven:
+  removing the contract section from the new output gives the previous output
+  byte-for-byte, 14771 chars on the real fixture). The shared-asset registry block
+  stays byte-identical to TDP, the converter math is verbatim, the preview engine is
+  untouched, the page's element-ID contract, the admin gate, the persistence layer
+  and the exact success message are untouched. Export JSON, the clamps and the
+  marker neutralization all still pass; the non-admin load stays clean and the
+  cookieless 403s return the exact gate string.
+
 ## v0.10.1 — 2026-11-15
 
 - **Export JSON.** With a saved slot selected in the library, **Export JSON**

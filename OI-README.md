@@ -27,11 +27,14 @@ From the TDP theme JSON, Skin-Smith emits, per mode (Dark / Light / OLED / Her),
 - **Gradient** — every mode gets **its own**: linear (angle), radial (shape, size, position), **conic** (`conic-gradient(from Xdeg, …)`), and mesh (points, spread, background) — intensity-adjusted stops, animation at the mode's own speed.
 - **Structural layer** — the body and sidebar base colours, and for gradient modes the clearing of Open WebUI's opaque panels so the gradient is visible: app shell, main, sidebar, message content, nav, sticky bars and background utilities, with the chat overlay and sidebar tinted with the gradient's base colour. The guard list keeps buttons, links, inputs, labels, spans and your own message bubble intact.
 - **OLED** — true-black palette overrides, scoped to Open WebUI's OLED marker; plain Dark never leaks true-black.
+- **Visualization contract** — the six variables Open WebUI's Visualizations contract uses (`--owui-background`, `--owui-surface`, `--owui-text`, `--owui-muted`, `--owui-border`, `--owui-accent`) are emitted per mode, taken from the mode's own palette, with `--owui-accent` from the theme's accent. A feature that reads the page's contract inherits the skin.
 
 In the JSON, two things carry no effect in Skin-Smith, and we say so honestly:
 
 - `--tdp-hue` / `--tdp-chroma` are emitted for TDP Canvas FX interop. Skin-Smith ships no canvas runtime, so they are inert.
 - Radii, blur, spacing, font size, transition and transparency sliders are TDP **designer UI valves** — they are not export fields. What they produce arrives as overrides, manual overrides or custom CSS, which are already emitted.
+
+One honest note on Open WebUI's Visualizations (0.13.4+): the frame renders in an opaque `srcdoc` iframe whose colours are baked into the frame's own HTML, and the context it receives carries no colours — so a page's `--owui-*` values reach it only when Open WebUI forwards them. Skin-Smith publishes the contract per mode, and the forwarding patch (twelve lines in `context()` + `contextChanged()`) is prepared.
 
 ## Install
 
